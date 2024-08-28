@@ -14,7 +14,29 @@ import { useCallback, useMemo, useState } from "react";
 import OrderModalShow from "./OrderShowModal";
 import AddOrderModal from "./AddOrderModal";
 
-const Order = ({ items }) => {
+type TMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPage: number;
+};
+
+type TOrder = {
+  _id: string;
+  orderId: string;
+  name: string;
+  date: string; // assuming the date is a string in ISO format
+  status: string;
+};
+
+export type TItems = {
+  data: {
+    meta: TMeta;
+    result: TOrder[];
+  };
+};
+
+const Order = ({ items }: { items: TItems }) => {
   const [page, setPage] = useState(1);
 
   const pages = items?.data?.meta?.page;
@@ -41,7 +63,7 @@ const Order = ({ items }) => {
         return (
           //
           <div className="flex justify-center gap-5">
-            <OrderModalShow />
+            <OrderModalShow details={order} />
             <Button className="bg-blue-500 text-white ">Report</Button>
           </div>
         );
@@ -57,14 +79,13 @@ const Order = ({ items }) => {
           isCompact
           showControls
           showShadow
-          
           page={page}
-          total={items?.data?.meta?.totalpage}
+          total={items?.data?.meta?.totalPage}
           onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            // isDisabled={pages === 1}
+            isDisabled={pages === 1}
             size="sm"
             variant="flat"
             onPress={onPreviousPage}
@@ -72,7 +93,7 @@ const Order = ({ items }) => {
             Previous
           </Button>
           <Button
-            // isDisabled={pages === 1}
+            isDisabled={pages === 1}
             size="sm"
             variant="flat"
             onPress={onNextPage}
@@ -82,7 +103,7 @@ const Order = ({ items }) => {
         </div>
       </div>
     );
-  }, [page, onNextPage, onPreviousPage]);
+  }, [page, onNextPage, onPreviousPage, items?.data?.meta?.totalPage, pages]);
 
   return (
     <div>
@@ -91,6 +112,7 @@ const Order = ({ items }) => {
       {/* table */}
 
       <Table
+        aria-label="Order Table"
         isStriped
         isHeaderSticky
         bottomContent={bottomContent}

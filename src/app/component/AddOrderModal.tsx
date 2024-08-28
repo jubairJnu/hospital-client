@@ -12,18 +12,38 @@ import {
   SelectItem,
 } from "@nextui-org/react";
 import { FieldValues, useForm } from "react-hook-form";
+import { createOrder } from "../action/Action";
+import { revalidateTag } from "next/cache";
+import { toast } from "sonner";
 
 export default function AddOrderModal() {
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const {
     register,
     handleSubmit,
-    watch,
+    reset,
     formState: { errors },
   } = useForm();
 
-  const onSubmit = (data: FieldValues) => console.log(data);
+  const onSubmit = async (data: FieldValues) => {
+    const { name, date, status } = data;
+    const orderinfo = {
+      name,
+      date,
+      status,
+    };
+
+    const res = await createOrder(orderinfo);
+    // revalidateTag("orders");
+
+    if (res.success) {
+      toast.success("Order Created Successfully");
+      await onClose();
+
+      reset();
+    }
+  };
 
   return (
     <>
@@ -40,43 +60,55 @@ export default function AddOrderModal() {
               <ModalBody>
                 <div>
                   <form onSubmit={handleSubmit(onSubmit)}>
-                    <Input
-                      label="Name"
-                      placeholder="Name"
-                      color="primary"
-                      variant="bordered"
-                      className="mb-5"
-                      {...register("name", { required: true })}
-                    />
-                    <Input
-                      label="Date"
-                      placeholder="date"
-                      type="date"
-                      color="primary"
-                      variant="bordered"
-                      className="mb-5"
-                      {...register("date", { required: true })}
-                    />
+                    <div className="mb-5">
+                      <Input
+                        label="Name"
+                        placeholder="Name"
+                        color="primary"
+                        variant="bordered"
+                        {...register("name", { required: true })}
+                      />
 
+                      {errors.name && (
+                        <span className="text-red-500">Name is required</span>
+                      )}
+                    </div>
+                    <div className="mb-5">
+                      <Input
+                        label="Date"
+                        placeholder="date"
+                        type="date"
+                        color="primary"
+                        variant="bordered"
+                        {...register("date", { required: true })}
+                      />
+                      {errors.date && (
+                        <span className="text-red-500">Date is required</span>
+                      )}
+                    </div>
+                    .
                     <Select
                       label="Select Status"
                       color="primary"
                       variant="bordered"
                       className=""
+                      {...register("status", { required: true })}
                     >
                       <SelectItem key="Initialize">Initialize</SelectItem>
                       <SelectItem key="pending">pending</SelectItem>
                       <SelectItem key="Delevered">Delevered</SelectItem>
                     </Select>
+                    {errors.status && (
+                      <span className="text-red-500">Status is required</span>
+                    )}
+                    <ModalFooter>
+                      <Button type="submit" color="primary">
+                        Add
+                      </Button>
+                    </ModalFooter>
                   </form>
                 </div>
               </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
-                </Button>
-                <Button color="primary">Add</Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>
