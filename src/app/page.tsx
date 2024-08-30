@@ -1,20 +1,11 @@
-// Import your client component
-
-import { getOrders } from "./action/Action";
 import Order from "./component/Order";
+import OrderSearch from "./component/OrderSearch";
 
-const Main = async () => {
-  const orders = await getOrders();
-
+const Main = () => {
   return (
-    <div className="w-full max-w-7xl mx-auto px-5">
-      home
-      {/* {orders?.data?.result?.map((item) => (
-        <ul>
-          <li>{item.name}</li>
-        </ul>
-      ))} */}
-      <Order items={orders} />
+    <div className="w-full max-w-7xl mx-auto px-5 mt-10">
+      <Order />
+      <OrderSearch />
     </div>
   );
 };

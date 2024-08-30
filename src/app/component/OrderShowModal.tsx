@@ -14,8 +14,12 @@ import {
   SelectItem,
 } from "@nextui-org/react";
 import { FieldValues, useForm } from "react-hook-form";
+import { updateOrder } from "../action/Action";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 type TDetailsProps = {
+  _id: string;
   name: string;
   date: string;
   status: string;
@@ -26,7 +30,9 @@ export default function OrderModalShow({
 }: {
   details: TDetailsProps;
 }) {
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
+  const id = details?._id;
 
   const {
     register,
@@ -43,7 +49,24 @@ export default function OrderModalShow({
     setValue("status", details?.status);
   }, [details, setValue]);
 
-  const onSubmit = (data: FieldValues) => console.log(data, "upadtre");
+  const onSubmit = async (data: FieldValues) => {
+    const { name, date, status } = data;
+    const options = {
+      id: id,
+      data: {
+        name,
+        date,
+        status,
+      },
+    };
+
+    const res = await updateOrder(options);
+    await onClose();
+
+    if (res.success) {
+      toast.success("Updated Successfully");
+    }
+  };
 
   return (
     <>
@@ -90,8 +113,7 @@ export default function OrderModalShow({
                       className=""
                       placeholder="Select Status"
                       {...register("status", { required: true })}
-                      // defaultSelectedKeys={details?.status}
-                      selectedKeys={details?.status}
+                      defaultSelectedKeys={details?.status}
                     >
                       <SelectItem key="initialize">initialize</SelectItem>
                       <SelectItem key="pending">pending</SelectItem>

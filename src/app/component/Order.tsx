@@ -9,37 +9,84 @@ import {
   TableCell,
   Button,
   Pagination,
+  Spinner,
 } from "@nextui-org/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import OrderModalShow from "./OrderShowModal";
 import AddOrderModal from "./AddOrderModal";
+import { TItems } from "../types/Index";
+import axios from "axios";
+import { getOrders } from "../action/Action";
+import ReportModal from "./ReportModal";
+import { toast } from "sonner";
 
-type TMeta = {
+interface OrderProps {
+  items: TItems; // Assuming TItems is the correct type for items
   page: number;
-  limit: number;
-  total: number;
-  totalPage: number;
-};
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+}
 
-type TOrder = {
-  _id: string;
-  orderId: string;
-  name: string;
-  date: string; // assuming the date is a string in ISO format
-  status: string;
-};
+const Order = () => {
+  const [pdfUrl, setPdfUrl] = useState("");
 
-export type TItems = {
-  data: {
-    meta: TMeta;
-    result: TOrder[];
-  };
-};
-
-const Order = ({ items }: { items: TItems }) => {
   const [page, setPage] = useState(1);
 
-  const pages = items?.data?.meta?.page;
+  // Initialize orders with an empty structure that matches TItems
+  const [orders, setOrders] = useState<TItems>({
+    data: {
+      result: [],
+      meta: {
+        totalPage: 1,
+        page: 1,
+        total: 1,
+        limit: 10,
+      },
+    },
+  });
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      toast.loading("Loading...");
+      const fetchedOrders = await getOrders({ page });
+      setOrders(fetchedOrders);
+    };
+
+    fetchOrders();
+  }, [page]);
+
+  const handleViewPDF = async (id: string) => {
+    console.log("id", id);
+    try {
+      // Fetch PDF data
+      const response = await axios.get(
+        `https://hospital-server-weld.vercel.app/order/pdf/${id}`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      // Create a new URL for the PDF Blob
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: "application/pdf" })
+      );
+
+      // Create a temporary <a> element to trigger the download
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `order_${id}.pdf`); // Set the file name
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating PDF", error);
+    }
+  };
+
+  const pages = orders?.data?.meta?.totalPage;
+  console.log(pages);
 
   const onNextPage = useCallback(() => {
     if (page < pages) {
@@ -64,7 +111,14 @@ const Order = ({ items }: { items: TItems }) => {
           //
           <div className="flex justify-center gap-5">
             <OrderModalShow details={order} />
-            <Button className="bg-blue-500 text-white ">Report</Button>
+            <ReportModal orderDetail={order} />
+
+            <Button
+              onClick={() => handleViewPDF(order._id)}
+              className="bg-blue-500 text-white "
+            >
+              Download
+            </Button>
           </div>
         );
 
@@ -80,12 +134,12 @@ const Order = ({ items }: { items: TItems }) => {
           showControls
           showShadow
           page={page}
-          total={items?.data?.meta?.totalPage}
+          total={orders?.data?.meta?.totalPage}
           onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === 1}
             size="sm"
             variant="flat"
             onPress={onPreviousPage}
@@ -93,7 +147,7 @@ const Order = ({ items }: { items: TItems }) => {
             Previous
           </Button>
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === orders?.data?.meta?.totalPage}
             size="sm"
             variant="flat"
             onPress={onNextPage}
@@ -103,7 +157,13 @@ const Order = ({ items }: { items: TItems }) => {
         </div>
       </div>
     );
-  }, [page, onNextPage, onPreviousPage, items?.data?.meta?.totalPage, pages]);
+  }, [
+    page,
+    setPage,
+    onNextPage,
+    onPreviousPage,
+    orders?.data?.meta?.totalPage,
+  ]);
 
   return (
     <div>
@@ -118,7 +178,7 @@ const Order = ({ items }: { items: TItems }) => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-screen  m-5",
+          wrapper: "max-h-screen  mt-5",
         }}
       >
         <TableHeader>
@@ -153,7 +213,11 @@ const Order = ({ items }: { items: TItems }) => {
             Action
           </TableColumn>
         </TableHeader>
-        <TableBody emptyContent={"No exams found"} items={items?.data?.result}>
+        <TableBody
+          loadingContent={<Spinner label="Loading..." />}
+          emptyContent={"No order  found"}
+          items={orders?.data?.result}
+        >
           {(item: any) => (
             <TableRow className="text-center" key={item._id}>
               {(columnKey) => (

@@ -35,7 +35,6 @@ export default function AddOrderModal() {
     };
 
     const res = await createOrder(orderinfo);
-    // revalidateTag("orders");
 
     if (res.success) {
       toast.success("Order Created Successfully");
