@@ -49,7 +49,7 @@ const OrderSearch = () => {
   };
 
   // Memoize the debounced function to avoid recreating it on each render
-  const debounceSearch = useCallback(debounce(fetchOrders, 500), []);
+  const debounceSearch = useCallback(debounce(fetchOrders, 700), []);
 
   return (
     <div className="pb-20">
