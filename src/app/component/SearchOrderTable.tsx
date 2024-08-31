@@ -47,8 +47,8 @@ const SearchOrderTable: React.FC<Props> = ({ data }) => {
             <TableColumn>Action</TableColumn>
           </TableHeader>
           <TableBody emptyContent="No data ">
-            {data.flatMap((item) =>
-              item.orderItem.map((order) => (
+            {data?.flatMap((item) =>
+              item?.orderItem?.map((order) => (
                 <TableRow key={order.itemId._id}>
                   <TableCell>{order.itemId.itemId}</TableCell>
                   <TableCell>{order.itemId.title}</TableCell>
